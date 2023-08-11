@@ -1,0 +1,87 @@
+def encode_text_into_image(image_path, text): Defines a function encode_text_into_image that takes an image path and text as input parameters. This function encodes the text into the image.
+
+try:: Starts a try-except block to catch and handle any exceptions that may occur during the execution of the code within the block.
+
+image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE): Reads the image from the specified image_path using OpenCV's imread function. The cv2.IMREAD_GRAYSCALE flag ensures that the image is loaded as grayscale.
+
+max_text_length = (image.shape[0] * image.shape[1] * 7) // 8: Calculates the maximum length of text that can be encoded into the image based on the image dimensions. It uses the formula (image_height * image_width * 7) // 8 to determine the maximum number of ASCII characters that can be hidden.
+
+if len(text) > max_text_length:: Checks if the length of the provided text is greater than the maximum text length that can be encoded. If so, it raises a ValueError with an error message.
+
+ascii_codes = [ord(char) for char in text]: Converts each character in the text to its corresponding ASCII code using a list comprehension.
+
+encoded_image = image.copy(): Creates a copy of the original image to store the encoded image.
+
+bit_index = 0: Initializes a variable bit_index to keep track of the current bit being encoded.
+
+for row in range(encoded_image.shape[0]):: Iterates over the rows of the encoded image.
+
+for col in range(encoded_image.shape[1]):: Iterates over the columns of the encoded image.
+
+pixel_value = encoded_image[row, col]: Retrieves the pixel value at the current row and column.
+
+if bit_index < len(ascii_codes) * 7:: Checks if there are more bits to encode. Each ASCII code requires 7 bits for encoding.
+
+ascii_index = bit_index // 7: Calculates the index of the current ASCII code being encoded.
+
+ascii_bit = bit_index % 7: Calculates the bit position within the current ASCII code.
+
+ascii_code_bit = (ascii_codes[ascii_index] >> (6 - ascii_bit)) & 1: Extracts the desired bit from the current ASCII code.
+
+encoded_image[row, col] = (pixel_value & 0xFE) | ascii_code_bit: Encodes the extracted bit into the least significant bit (LSB) of the pixel value. The original LSB is cleared (bitwise AND with 0xFE) and replaced with the desired bit (bitwise OR with ascii_code_bit).
+
+bit_index += 1: Increments the bit index to move to the next bit.
+
+noise = np.random.normal(0, 0.5, encoded_image.shape): Generates Gaussian noise with the same shape as the encoded image using NumPy's random.normal function. This noise will be added to the encoded image for improved security.
+
+encoded_image_with_noise = np.clip(encoded_image + noise, 0, 255).astype(np.uint8): Adds the generated noise to the encoded image and ensures that the pixel values are within the valid range of 0 to 255. The np.clip function clips the values, and astype(np.uint8) converts the result to an unsigned 8-bit integer.
+
+def decode_text_from_image(encoded_image_with_noise, original_noiseless_image, text_length): Defines a function decode_text_from_image that takes an encoded image with noise, the original noiseless image, and the length of the text as input parameters. This function decodes the text from the encoded image.
+
+try:: Starts a try-except block to catch and handle any exceptions that may occur during the execution of the code within the block.
+
+denoised_image = cv2.fastNlMeansDenoising(encoded_image_with_noise, None, 10, 7, 21): Applies non-local means (NUnfortunately, the explanation got cut off. Here's the continuation:
+
+denoised_image = cv2.fastNlMeansDenoising(encoded_image_with_noise, None, 10, 7, 21): Applies non-local means (NLM) denoising to the encoded image with noise using OpenCV's fastNlMeansDenoising function. This step helps to remove the noise added during the encoding phase.
+
+extracted_bits = []: Initializes an empty list to store the extracted bits.
+
+for row in range(denoised_image.shape[0]):: Iterates over the rows of the denoised image.
+
+for col in range(denoised_image.shape[1]):: Iterates over the columns of the denoised image.
+
+pixel_value = denoised_image[row, col]: Retrieves the pixel value at the current row and column.
+
+extracted_bits.append(pixel_value & 1): Extracts the least significant bit (LSB) from the pixel value and appends it to the extracted_bits list.
+
+ascii_codes = [sum(extracted_bits[i:i+7]) for i in range(0, len(extracted_bits), 7)]: Splits the extracted bits into groups of 7 and sums each group to obtain the ASCII codes.
+
+decoded_text = ''.join([chr(code) for code in ascii_codes][:text_length]): Converts the ASCII codes back to characters using a list comprehension and chr function. The resulting characters are joined together to form the decoded text. Only the first text_length characters are considered.
+
+image_path = 'path_to_your_image.jpg': Specifies the path to the image file that will be used for encoding and decoding.
+
+text_to_hide = "Hello, World!": Specifies the text that will be hidden in the image.
+
+text_length = len(text_to_hide): Calculates the length of the text that will be hidden.
+
+encoded_image_with_noise = encode_text_into_image(image_path, text_to_hide): Calls the encode_text_into_image function to encode the text into the image and obtain the encoded image with added noise.
+
+original_noiseless_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE): Reads the original noiseless image from the specified image_path using OpenCV's imread function.
+
+decoded_text = decode_text_from_image(encoded_image_with_noise, original_noiseless_image, text_length): Calls the decode_text_from_image function to decode the text from the encoded image with noise.
+
+print("Original Text:", text_to_hide): Prints the original text that was hidden in the image.
+
+print("Decoded Text:", decoded_text): Prints the text that was decoded from the image.
+
+cv2.imshow("Encoded Image", encoded_image_with_noise): Displays the encoded image with noise using OpenCV's imshow function.
+
+cv2.waitKey(0): Waits for a key press.
+
+cv2.destroyAllWindows(): Closes all the windows created by OpenCV.
+
+ssim_score = ssim(original_noiseless_image, encoded_image_with_noise): Calculates the SSIM score between the original noiseless image and the encoded image with noise using the structural_similarity function from the skimage.metrics module.
+
+print("SSIM:", ssim_score): Prints the calculated SSIM score.
+
+68-73. Compares the degree of similarity between the images based on the SSIM score. If the score is 1, it indicates that the images are identical. If the score is greater than 0.9, the images are considered very similar. If the score is greater than 0.8, the images are considered similar. Otherwise, the images are considered different.
